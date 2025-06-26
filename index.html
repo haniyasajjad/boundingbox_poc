@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS Points Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map { height: 600px; width: 100%; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([-23.4245, -46.7615], 15);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Layer for GPS points
+        let gpsLayer = L.geoJSON().addTo(map);
+
+        // Function to fetch GPS points
+        async function fetchGpsPoints() {
+            const bounds = map.getBounds();
+            const zoom = map.getZoom();
+            const payload = {
+                min_lat: bounds.getSouth(),
+                min_lng: bounds.getWest(),
+                max_lat: bounds.getNorth(),
+                max_lng: bounds.getEast(),
+                zoom_level: zoom
+            };
+
+            try {
+                const response = await fetch('http://localhost:8080/gps-points/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error('Network response was not ok');
+                const geojson = await response.json();
+
+                // Clear existing points
+                gpsLayer.clearLayers();
+
+                // Add new points with custom styling
+                gpsLayer = L.geoJSON(geojson, {
+                    pointToLayer: function (feature, latlng) {
+                        const isDistress = feature.properties.point_type === 'distress';
+                        return L.circleMarker(latlng, {
+                            radius: isDistress ? 8 : 5,
+                            fillColor: isDistress ? '#ff0000' : '#3388ff',
+                            color: '#000',
+                            weight: 1,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        });
+                    },
+                    onEachFeature: function (feature, layer) {
+                        layer.bindPopup(
+                            `Speed: ${feature.properties.speed} km/h<br>` +
+                            `Type: ${feature.properties.point_type}<br>` +
+                            `Frame: ${feature.properties.frame_number}<br>` +
+                            `Lat: ${feature.properties.lat}<br>` +
+                            `Lng: ${feature.properties.lng}`
+                        );
+                    }
+                }).addTo(map);
+            } catch (error) {
+                console.error('Error fetching GPS points:', error);
+            }
+        }
+
+        // Fetch points on map move or zoom
+        map.on('moveend zoomend', fetchGpsPoints);
+
+        // Initial fetch
+        fetchGpsPoints();
+    </script>
+</body>
+</html>
