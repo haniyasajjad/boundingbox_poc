@@ -18,7 +18,7 @@ db_params = {
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or specify your frontend URL
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,7 +43,7 @@ async def get_gps_points(bbox: BoundingBox):
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
     
-        # Define zoom-level logic: show potential distresses (speed < 30) only at zoom >= 15
+        #zoom-level logic: show points:"Normal" (speed < 46) only at zoom >= 15
         if bbox.zoom_level >= 15:
             query = """
                 SELECT 
@@ -86,7 +86,7 @@ async def get_gps_points(bbox: BoundingBox):
             """
         
         
-        # Parameters: min_lng, min_lat, max_lng, max_lat
+        #min_lng, min_lat, max_lng, max_lat
         params = (bbox.min_lng, bbox.min_lat, bbox.max_lng, bbox.max_lat)
         
         cur.execute(query, params)
