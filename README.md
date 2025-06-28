@@ -91,7 +91,7 @@ curl -X POST "http://localhost:8080/gps-points/" \
 
 ## Snapshots
 
-Below are example snapshots from the frontend (replace with actual images):
+Below are example snapshots from the frontend:
 
 ![Map View - Full Stretch](snapshots/map_full.png)
 
